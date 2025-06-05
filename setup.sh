@@ -20,7 +20,7 @@ cd minecraft
 if [ ! -f server.jar ]; then
     echo "Downloading Minecraft server..."
     # Replace this URL with the version you want
-    wget https://piston-data.mojang.com/v1/objects/84194a2f286ef7c14ed7ce0090dba59902951553/server.jar
+    wget https://piston-data.mojang.com/v1/objects/e6ec2f64e6080b9b5d9b471b291c33cc7f509733/server.jar
     echo "Downloaded server.jar"
 fi
 
