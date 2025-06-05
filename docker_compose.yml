@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  minecraft-console:
+    build: .
+    container_name: minecraft-console
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MINECRAFT_SERVER_PATH=/minecraft
+      - MINECRAFT_JAR=server.jar
+      - JAVA_XMS=1G
+      - JAVA_XMX=4G
+    volumes:
+      - minecraft_data:/minecraft
+      - ./minecraft:/minecraft:rw
+    depends_on:
+      - minecraft-server
+    restart: unless-stopped
+    networks:
+      - minecraft-network
+
+  minecraft-server:
+    image: openjdk:17-jre-slim
+    container_name: minecraft-server-java
+    volumes:
+      - minecraft_data:/minecraft
+      - ./minecraft:/minecraft:rw
+    working_dir: /minecraft
+    # This container runs alongside the console but the console manages the MC server process
+    command: tail -f /dev/null
+    restart: unless-stopped
+    networks:
+      - minecraft-network
+    ports:
+      - "25565:25565"
+    environment:
+      - JAVA_OPTS=-Xms1G -Xmx4G
+
+volumes:
+  minecraft_data:
+    driver: local
+
+networks:
+  minecraft-network:
+    driver: bridge

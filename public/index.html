@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Minecraft Web Console</title>
+  <style>
+    :root {
+      --bg-color: #1a1a1a;
+      --console-bg: #0a0a0a;
+      --primary: #52c41a;
+      --primary-hover: #73d13d;
+      --secondary: #424242;
+      --secondary-hover: #525252;
+      --text-color: #f0f0f0;
+      --accent: #8c8c8c;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Consolas', 'Courier New', monospace;
+      background: var(--bg-color);
+      color: var(--text-color);
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+    
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--secondary);
+    }
+    
+    .title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--primary);
+    }
+    
+    .title-icon {
+      width: 32px;
+      height: 32px;
+      background-color: var(--primary);
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    }
+    
+    .controls {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .btn {
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-family: inherit;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+    }
+    
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .btn-primary {
+      background: var(--primary);
+      color: #000;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+      transform: translateY(-2px);
+    }
+    
+    .btn-secondary {
+      background: var(--secondary);
+      color: var(--text-color);
+    }
+    
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--secondary-hover);
+      transform: translateY(-2px);
+    }
+    
+    .btn-danger {
+      background: #f5222d;
+      color: white;
+    }
+    
+    .btn-danger:hover:not(:disabled) {
+      background: #ff4d4f;
+      transform: translateY(-2px);
+    }
+    
+    .console-container {
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+    
+    .console-header {
+      background: #333;
+      color: #f0f0f0;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+    }
+    
+    .console-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+    }
+    
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f5222d;
+      animation: pulse 2s infinite;
+    }
+    
+    .status-indicator.online {
+      background: var(--primary);
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+    
+    #console {
+      width: 100%;
+      height: 400px;
+      background: var(--console-bg);
+      overflow-y: scroll;
+      white-space: pre-wrap;
+      padding: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #b5b5b5;
+    }
+    
+    .log-entry {
+      margin-bottom: 4px;
+    }
+    
+    .log-info {
+      color: #1890ff;
+    }
+    
+    .log-error {
+      color: #f5222d;
+    }
+    
+    .log-success {
+      color: var(--primary);
+    }
+    
+    .log-warning {
+      color: #faad14;
+    }
+    
+    .log-command {
+      color: #d4aa00;
+      font-weight: bold;
+    }
+    
+    .command-input {
+      display: flex;
+      gap: 8px;
+      background: #333;
+      padding: 10px;
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 8px;
+    }
+    
+    #cmd {
+      flex: 1;
+      background: #222;
+      border: 1px solid #444;
+      color: var(--text-color);
+      font-family: inherit;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    #cmd:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(82, 196, 26, 0.2);
+    }
+    
+    .quick-commands {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    
+    .quick-cmd {
+      padding: 6px 12px;
+      border-radius: 4px;
+      background: var(--secondary);
+      color: var(--text-color);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+    
+    .quick-cmd:hover {
+      background: var(--secondary-hover);
+      transform: translateY(-2px);
+    }
+    
+    .server-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    
+    .stat-card {
+      background: #262626;
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: transform 0.2s ease;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-2px);
+    }
+    
+    .stat-title {
+      font-size: 14px;
+      color: var(--accent);
+    }
+    
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--text-color);
+    }
+    
+    .connection-status {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+      z-index: 1000;
+    }
+    
+    .connection-status.connected {
+      background: var(--primary);
+      color: #000;
+    }
+    
+    .connection-status.disconnected {
+      background: #f5222d;
+      color: white;
+    }
+    
+    .footer {
+      margin-top: 32px;
+      text-align: center;
+      color: var(--accent);
+      font-size: 14px;
+    }
+    
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.5s ease;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+      }
+      
+      .controls {
+        width: 100%;
+        justify-content: space-between;
+      }
+      
+      .server-stats {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="connectionStatus" class="connection-status disconnected">Connecting...</div>
+  
+  <div class="container fade-in">
+    <div class="header">
+      <div class="title">
+        <div class="title-icon"></div>
+        <h1>Minecraft Server Console</h1>
+      </div>
+      <div class="controls">
+        <button id="startBtn" class="btn btn-primary" onclick="controlServer('start')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          Start
+        </button>
+        <button id="stopBtn" class="btn btn-danger" onclick="controlServer('stop')" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="6" y="6" width="12" height="12" rx="2" ry="2"></rect>
+          </svg>
+          Stop
+        </button>
+        <button id="restartBtn" class="btn btn-secondary" onclick="controlServer('restart')" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38"></path>
+          </svg>
+          Restart
+        </button>
+      </div>
+    </div>
+    
+    <div class="console-container">
+      <div class="console-header">
+        <div class="console-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 17 10 11 4 5"></polyline>
+            <line x1="12" y1="19" x2="20" y2="19"></line>
+          </svg>
+          Server Output
+        </div>
+        <div class="status">
+          <div id="status-indicator" class="status-indicator"></div>
+          <span id="status-text">Offline</span>
+        </div>
+      </div>
+      <div id="console">Connecting to server...</div>
+      <div class="command-input">
+        <input id="cmd" placeholder="Enter command" onkeydown="if(event.key==='Enter') sendCommand()" disabled>
+        <button id="sendBtn" class="btn btn-primary" onclick="sendCommand()" disabled>Send</button>
+      </div>
+    </div>
+    
+    <div class="quick-commands">
+      <div class="quick-cmd" onclick="insertCommand('help')">help</div>
+      <div class="quick-cmd" onclick="insertCommand('list')">list players</div>
+      <div class="quick-cmd" onclick="insertCommand('weather clear')">weather clear</div>
+      <div class="quick-cmd" onclick="insertCommand('time set day')">time set day</div>
+      <div class="quick-cmd" onclick="insertCommand('difficulty peaceful')">peaceful mode</div>
+      <div class="quick-cmd" onclick="insertCommand('gamemode creative @a')">creative mode all</div>
+    </div>
+    
+    <div class="server-stats">
+      <div class="stat-card">
+        <div class="stat-title">Online Players</div>
+        <div class="stat-value" id="player-count">0/20</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Memory Usage</div>
+        <div class="stat-value" id="memory-usage">0/4 GB</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Uptime</div>
+        <div class="stat-value" id="uptime">00:00:00</div>
+      </div>
+    </div>
+    
+    <div class="footer">
+      Minecraft Server Web Console • Version 2.0 • Real-time Management
+    </div>
+  </div>
+
+  <script>
+    let ws = null;
+    let serverStatus = {
+      online: false,
+      players: 0,
+      maxPlayers: 20,
+      memoryUsed: 0,
+      maxMemory: 4,
+      startTime: null
+    };
+    
+    // Initialize WebSocket connection
+    function initWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}`;
+      
+      ws = new WebSocket(wsUrl);
+      
+      ws.onopen = function() {
+        console.log('WebSocket connected');
+        updateConnectionStatus(true);
+      };
+      
+      ws.onmessage = function(event) {
+        const message = JSON.parse(event.data);
+        handleWebSocketMessage(message);
+      };
+      
+      ws.onclose = function() {
+        console.log('WebSocket disconnected');
+        updateConnectionStatus(false);
+        // Attempt to reconnect after 3 seconds
+        setTimeout(initWebSocket, 3000);
+      };
+      
+      ws.onerror = function(error) {
+        console.error('WebSocket error:', error);
+        updateConnectionStatus(false);
+      };
+    }
+    
+    function handleWebSocketMessage(message) {
+      switch(message.type) {
+        case 'log':
+          appendToConsole(message.data.message);
+          break;
+        case 'status':
+          updateServerStatus(message.data);
+          break;
+      }
+    }
+    
+    function updateConnectionStatus(connected) {
+      const statusEl = document.getElementById('connectionStatus');
+      if (connected) {
+        statusEl.textContent = 'Connected';
+        statusEl.className = 'connection-status connected';
+      } else {
+        statusEl.textContent = 'Disconnected';
+        statusEl.className = 'connection-status disconnected';
+      }
+    }
+    
+    function updateServerStatus(status) {
+      serverStatus = status;
+      
+      // Update UI
+      const indicator = document.getElementById('status-indicator');
+      const statusText = document.getElementById('status-text');
+      const startBtn = document.getElementById('startBtn');
+      const stopBtn = document.getElementById('stopBtn');
+      const restartBtn = document.getElementById('restartBtn');
+      const cmdInput = document.getElementById('cmd');
+      const sendBtn = document.getElementById('sendBtn');
+      
+      if (status.online) {
+        indicator.classList.add('online');
+        statusText.textContent = 'Online';
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        restartBtn.disabled = false;
+        cmdInput.disabled = false;
+        sendBtn.disabled = false;
+      } else {
+        indicator.classList.remove('online');
+        statusText.textContent = 'Offline';
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        restartBtn.disabled = true;
+        cmdInput.disabled = true;
+        sendBtn.disabled = true;
+      }
+      
+      // Update stats
+      document.getElementById('player-count').textContent = `${status.players}/${status.maxPlayers}`;
+      document.getElementById('memory-usage').textContent = `${status.memoryUsed}/${status.maxMemory} GB`;
+      
+      // Update uptime
+      if (status.startTime) {
+        updateUptime(status.startTime);
+      } else {
+        document.getElementById('uptime').textContent = '00:00:00';
+      }
+    }
+    
+    function updateUptime(startTime) {
+      const now = new Date();
+      const start = new Date(startTime);
+      const uptimeSeconds = Math.floor((now - start) / 1000);
+      
+      const hours = Math.floor(uptimeSeconds / 3600).toString().padStart(2, '0');
+      const minutes = Math.floor((uptimeSeconds % 3600) / 60).toString().padStart(2, '0');
+      const seconds = Math.floor(uptimeSeconds % 60).toString().padStart(2, '0');
+      
+      document.getElementById('uptime').textContent = `${hours}:${minutes}:${seconds}`;
+    }
+    
+    async function controlServer(action) {
+      try {
+        const response = await fetch(`/api/server/${action}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          appendToConsole(`> ${result.message}`, 'success');
+        } else {
+          appendToConsole(`> Error: ${result.message}`, 'error');
+        }
+      } catch (error) {
+        appendToConsole(`> Network error: ${error.message}`, 'error');
+      }
+    }
+    
+    async function sendCommand() {
+      const cmdInput = document.getElementById('cmd');
+      const cmd = cmdInput.value.trim();
+      if (!cmd) return;
+      
+      try {
+        const response = await fetch('/api/command', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ command: cmd })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          appendToConsole(`> ${cmd}`, 'command');
+        } else {
+          appendToConsole(`> Error: ${result.message}`, 'error');
+        }
+        
+        cmdInput.value = '';
+      } catch (error) {
+        appendToConsole(`> Network error: ${error.message}`, 'error');
+      }
+    }
+    
+    function appendToConsole(text, type = 'info') {
+      const consoleDiv = document.getElementById('console');
+      
+      // Clear initial connecting message
+      if (consoleDiv.textContent === 'Connecting to server...') {
+        consoleDiv.innerHTML = '';
+      }
+      
+      const timestamp = new Date().toTimeString().split(' ')[0];
+      const formattedText = `[${timestamp}] ${text}`;
+      
+      let className = 'log-entry';
+      if (type === 'error') className += ' log-error';
+      else if (type === 'success') className += ' log-success';
+      else if (type === 'warning') className += ' log-warning';
+      else if (type === 'command') className += ' log-command';
+      else className += ' log-info';
+      
+      const logEntry = document.createElement('div');
+      logEntry.className = className;
+      logEntry.textContent = formattedText;
+      
+      consoleDiv.appendChild(logEntry);
+      consoleDiv.scrollTop = consoleDiv.scrollHeight;
+      
+      // Keep only last 1000 lines for performance
+      while (consoleDiv.children.length > 1000) {
+        consoleDiv.removeChild(consoleDiv.firstChild);
+      }
+    }
+    
+    function insertCommand(cmd) {
+      document.getElementById('cmd').value = cmd;
+      document.getElementById('cmd').focus();
+    }
+    
+    // Update uptime every second
+    setInterval(() => {
+      if (serverStatus.online && serverStatus.startTime) {
+        updateUptime(serverStatus.startTime);
+      }
+    }, 1000);
+    
+    // Initialize WebSocket connection on page load
+    initWebSocket();
+  </script>
+</body>
+</html>
